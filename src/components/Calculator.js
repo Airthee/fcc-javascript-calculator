@@ -23,6 +23,7 @@ class Calculator extends React.Component {
     super(props);
     this.state = {...initialState};
 
+    this.handleAnyClick = this.handleAnyClick.bind(this);
     this.handleClear = this.handleClear.bind(this);
     this.handleClickNumber = this.handleClickNumber.bind(this);
     this.handleClickEquals = this.handleClickEquals.bind(this);
@@ -36,33 +37,55 @@ class Calculator extends React.Component {
     });
   }
 
+  handleAnyClick() {
+    return new Promise((resolve, _reject) => {
+      this.setState({
+        displayValue: this.state.shouldClearDisplayValueNextTime ? initialState.displayValue : this.state.displayValue,
+        operation: this.state.shouldClearOperationNextTime ? initialState.operation : this.state.operation,
+      }, resolve());
+    });
+  }
+
   handleClickNumber(number) {
-    this.setState((state) => ({
-      displayValue: state.shouldClearDisplayValueNextTime ? String(number) : state.displayValue.concat(number),
-      operation: state.shouldClearOperationNextTime ? String(number) : state.operation.concat(number),
-      shouldClearDisplayValueNextTime: false,
-      shouldClearOperationNextTime: false
-    }));
+    this.handleAnyClick().then(() => {
+      this.setState((state) => ({
+        displayValue: state.displayValue.concat(number),
+        operation: state.operation.concat(number),
+        shouldClearDisplayValueNextTime: false,
+        shouldClearOperationNextTime: false
+      }));
+    });
   }
 
   handleClickOperator(operator) {
-    this.setState((state) => ({
-      displayValue: operator,
-      operation: state.operation.concat(operator),
-      shouldClearDisplayValueNextTime: true,
-      shouldClearOperationNextTime: false
-    }));
+    this.handleAnyClick().then(() => {
+      this.setState((state) => ({
+        displayValue: operator,
+        operation: state.operation.concat(operator),
+        shouldClearDisplayValueNextTime: true,
+        shouldClearOperationNextTime: false
+      }));
+    })
   }
 
   handleClickEquals() {
-    const total = eval(this.state.operation);
-
-    this.setState((state) => ({
-      displayValue: String(total),
-      operation: state.operation.concat(` = ${total}`),
-      shouldClearDisplayValueNextTime: true,
-      shouldClearOperationNextTime: true
-    }));
+    this.handleAnyClick().then(() => {
+      if (this.state.operation) {
+        try {
+          /* eslint no-eval: 0 */
+          const total = eval(this.state.operation);
+          this.setState((state) => ({
+            displayValue: String(total),
+            operation: state.operation ? state.operation.concat(` = ${total}`) : total,
+            shouldClearDisplayValueNextTime: true,
+            shouldClearOperationNextTime: true
+          }));
+        }
+        catch (e) {
+          console.error(e);
+        }
+      }
+    })
   }
 
   renderOperatorButton(operator) {
@@ -91,6 +114,9 @@ class Calculator extends React.Component {
         attributes.innerHTML = <span>&divide;</span>;
         attributes.id = 'divide';
         break;
+
+      default:
+        throw Error('Operator not supported');
     }
 
     return (
@@ -111,7 +137,8 @@ class Calculator extends React.Component {
       6: 'six',
       7: 'seven',
       8: 'eight',
-      9: 'nine'
+      9: 'nine',
+      '.': 'decimal'
     };
     return (
       <CalculatorButton
@@ -204,9 +231,7 @@ class Calculator extends React.Component {
               {this.renderNumberButton(0)}
             </td>
             <td>
-              <CalculatorButton id="decimal" className="btn-secondary">
-                .
-              </CalculatorButton>
+              {this.renderNumberButton('.')}
             </td>
           </tr>
         </tbody>
