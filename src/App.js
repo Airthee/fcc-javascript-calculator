@@ -1,6 +1,8 @@
 import React from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import AppHeader from './components/AppHeader';
+import Calculator from './components/Calculator';
+import './App.scss';
 
 class App extends React.Component {
   render() {
@@ -13,7 +15,7 @@ class App extends React.Component {
         </Row>
         <Row className="justify-content-center">
           <Col md={6} className="text-center">
-            MAIN COMPONENT HERE
+            <Calculator />
           </Col>
         </Row>
       </Container>

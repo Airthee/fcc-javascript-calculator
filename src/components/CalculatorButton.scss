@@ -1,0 +1,9 @@
+@import "~bootstrap/scss/bootstrap";
+
+.btn-calculator {
+  @extend .btn;
+  @extend .btn-lg;
+  @extend .btn-block;
+
+  height: 100%;
+}
