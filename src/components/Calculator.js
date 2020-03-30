@@ -8,10 +8,12 @@ const OPERATOR_DIVIDE = '/';
 const OPERATOR_SUSTRACT = '-';
 const OPERATOR_ADD = '+';
 const OPERATOR_MULTIPLY = '*';
+const OPERATOR_DECIMAL = '.';
 
 // Initial state
 // Used by the clear button
 const initialState = {
+  total: null,
   displayValue: '',
   operation: '',
   shouldClearDisplayValueNextTime: false,
@@ -37,55 +39,83 @@ class Calculator extends React.Component {
     });
   }
 
-  handleAnyClick() {
-    return new Promise((resolve, _reject) => {
-      this.setState({
-        displayValue: this.state.shouldClearDisplayValueNextTime ? initialState.displayValue : this.state.displayValue,
-        operation: this.state.shouldClearOperationNextTime ? initialState.operation : this.state.operation,
-      }, resolve());
+  handleAnyClick(symbol, specificSetState) {
+    // If the display is in this array
+    // and if the user type this symbol again, we do nothing
+    const displayValueLength = this.state.displayValue.length;
+    if (displayValueLength > 0) {
+      const excludeSymbolRepeat = ['0', OPERATOR_DECIMAL, OPERATOR_DIVIDE, OPERATOR_MULTIPLY, OPERATOR_SUSTRACT, OPERATOR_ADD];
+      const displayValueLastChar = String(this.state.displayValue).charAt(displayValueLength-1);
+      const excludeSymbolIndex = excludeSymbolRepeat.indexOf(String(symbol));
+      if ((excludeSymbolIndex !== -1) && (excludeSymbolIndex === excludeSymbolRepeat.indexOf(displayValueLastChar))) {
+        console.warn(`Cannot repeat symbol ${symbol}`);
+        return false;
+      }
+    }
+
+    // Create the new state
+    const state = {
+      ...this.state,
+      displayValue: this.state.shouldClearDisplayValueNextTime ? initialState.displayValue : this.state.displayValue,
+      operation: this.state.shouldClearOperationNextTime ? initialState.operation : this.state.operation
+    };
+    this.setState({
+      ...state,
+      ...specificSetState(state)
     });
   }
 
   handleClickNumber(number) {
-    this.handleAnyClick().then(() => {
-      this.setState((state) => ({
-        displayValue: state.displayValue.concat(number),
-        operation: state.operation.concat(number),
-        shouldClearDisplayValueNextTime: false,
-        shouldClearOperationNextTime: false
-      }));
-    });
+    // If the display already contains a DECIMAL_OPERATOR, we do nothing
+    if (number === OPERATOR_DECIMAL && this.state.displayValue.indexOf(OPERATOR_DECIMAL) !== -1) {
+      return false;
+    }
+
+    this.handleAnyClick(number, (state) => ({
+      total: initialState.total,
+      displayValue: state.displayValue.concat(number),
+      operation: state.operation.concat(number),
+      shouldClearDisplayValueNextTime: false,
+      shouldClearOperationNextTime: false
+    }));
   }
 
   handleClickOperator(operator) {
-    this.handleAnyClick().then(() => {
-      this.setState((state) => ({
+    this.handleAnyClick(operator, (state) => {
+      let operation = state.operation;
+      
+      // TODO
+      // By default, when an operator is typed, it replace all the operators before
+      // If this is a sustract, we can add it
+      // ...
+
+      return {
         displayValue: operator,
-        operation: state.operation.concat(operator),
+        operation: (state.total !== null ? String(state.total) : operation).concat(operator),
         shouldClearDisplayValueNextTime: true,
         shouldClearOperationNextTime: false
-      }));
-    })
+      }
+    });
   }
 
   handleClickEquals() {
-    this.handleAnyClick().then(() => {
-      if (this.state.operation) {
-        try {
-          /* eslint no-eval: 0 */
-          const total = eval(this.state.operation);
-          this.setState((state) => ({
-            displayValue: String(total),
-            operation: state.operation ? state.operation.concat(` = ${total}`) : total,
-            shouldClearDisplayValueNextTime: true,
-            shouldClearOperationNextTime: true
-          }));
-        }
-        catch (e) {
-          console.error(e);
-        }
+    if (this.state.operation) {
+      try {
+        /* eslint no-eval: 0 */
+        const total = eval(this.state.operation);
+        console.log(total);
+        this.setState((state) => ({
+          total,
+          displayValue: String(total),
+          operation: state.operation ? state.operation.concat(` = ${total}`) : total,
+          shouldClearDisplayValueNextTime: true,
+          shouldClearOperationNextTime: true
+        }));
       }
-    })
+      catch (e) {
+        console.error(e);
+      }
+    }
   }
 
   renderOperatorButton(operator) {
@@ -128,18 +158,19 @@ class Calculator extends React.Component {
 
   renderNumberButton(number) {
     const idsByNumber = {
-      0: 'zero',
-      1: 'one',
-      2: 'two',
-      3: 'three',
-      4: 'four',
-      5: 'five',
-      6: 'six',
-      7: 'seven',
-      8: 'eight',
-      9: 'nine',
-      '.': 'decimal'
+      '0': 'zero',
+      '1': 'one',
+      '2': 'two',
+      '3': 'three',
+      '4': 'four',
+      '5': 'five',
+      '6': 'six',
+      '7': 'seven',
+      '8': 'eight',
+      '9': 'nine',
     };
+    idsByNumber[OPERATOR_DECIMAL] = 'decimal';
+    
     return (
       <CalculatorButton
         id={idsByNumber[number]}
@@ -231,7 +262,7 @@ class Calculator extends React.Component {
               {this.renderNumberButton(0)}
             </td>
             <td>
-              {this.renderNumberButton('.')}
+              {this.renderNumberButton(OPERATOR_DECIMAL)}
             </td>
           </tr>
         </tbody>
