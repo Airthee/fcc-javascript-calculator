@@ -84,10 +84,15 @@ class Calculator extends React.Component {
     this.handleAnyClick(operator, (state) => {
       let operation = state.operation;
       
-      // TODO
       // By default, when an operator is typed, it replace all the operators before
       // If this is a sustract, we can add it
-      // ...
+      if (operator !== OPERATOR_SUSTRACT && operation.length > 0) {
+        let lastChar = operation.charAt(operation.length - 1);
+        while ([OPERATOR_ADD, OPERATOR_DIVIDE, OPERATOR_MULTIPLY, OPERATOR_SUSTRACT].indexOf(lastChar) !== -1) {
+          operation = operation.slice(0, operation.length -1); 
+          lastChar = operation.charAt(operation.length - 1);
+        }
+      }
 
       return {
         displayValue: operator,
