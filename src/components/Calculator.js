@@ -14,7 +14,7 @@ const OPERATOR_DECIMAL = '.';
 // Used by the clear button
 const initialState = {
   total: null,
-  displayValue: '',
+  displayValue: '0',
   operation: '',
   shouldClearDisplayValueNextTime: false,
   shouldClearOperationNextTime: false
@@ -44,7 +44,7 @@ class Calculator extends React.Component {
     // and if the user type this symbol again, we do nothing
     const displayValueLength = this.state.displayValue.length;
     if (displayValueLength > 0) {
-      const excludeSymbolRepeat = ['0', OPERATOR_DECIMAL, OPERATOR_DIVIDE, OPERATOR_MULTIPLY, OPERATOR_SUSTRACT, OPERATOR_ADD];
+      const excludeSymbolRepeat = [OPERATOR_DECIMAL, OPERATOR_DIVIDE, OPERATOR_MULTIPLY, OPERATOR_SUSTRACT, OPERATOR_ADD];
       const displayValueLastChar = String(this.state.displayValue).charAt(displayValueLength-1);
       const excludeSymbolIndex = excludeSymbolRepeat.indexOf(String(symbol));
       if ((excludeSymbolIndex !== -1) && (excludeSymbolIndex === excludeSymbolRepeat.indexOf(displayValueLastChar))) {
@@ -71,13 +71,23 @@ class Calculator extends React.Component {
       return false;
     }
 
-    this.handleAnyClick(number, (state) => ({
-      total: initialState.total,
-      displayValue: state.displayValue.concat(number),
-      operation: state.operation.concat(number),
-      shouldClearDisplayValueNextTime: false,
-      shouldClearOperationNextTime: false
-    }));
+    // If display value is 0 and we type 0, we do nothing
+    if (this.state.displayValue === '0' && number === 0) {
+      return false;
+    }
+
+    this.handleAnyClick(number, (state) => {
+      // If the display value is 0 and we type another number than 0, replace
+      state.displayValue = (state.displayValue === '0') ? String(number) : state.displayValue.concat(number);
+
+      return {
+        total: initialState.total,
+        displayValue: state.displayValue,
+        operation: state.operation.concat(number),
+        shouldClearDisplayValueNextTime: false,
+        shouldClearOperationNextTime: false
+      };
+    });
   }
 
   handleClickOperator(operator) {
@@ -193,7 +203,7 @@ class Calculator extends React.Component {
         <tbody>
           <tr>
             <td colSpan="4">
-              <CalculatorDisplay idDisplay="display" total={this.state.displayValue || '0'} operation={this.state.operation} />
+              <CalculatorDisplay idDisplay="display" total={this.state.displayValue} operation={this.state.operation} />
             </td>
           </tr>
           <tr rowSpan="2">
